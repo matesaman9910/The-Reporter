@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Reporter — v18</title>
+<style>
+:root{
+  --bg:#02050a;
+  --bg2:#071019;
+  --text:#eaf4ff;
+  --muted:#a9b9cb;
+  --accent:#00e5ff;
+  --accent-2:#00b3ff;
+  --accent-3:#00ffd5;
+  --warn:#ffd54d;
+  --warn-text:#201a00;
+  --shadow: 0 50px 120px rgba(0,229,255,0.18);
+  --card-radius: 24px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: system-ui, "SF Pro Text", "SF Pro Display", "Segoe UI Variable", "Segoe UI",
+               Inter, Roboto, Ubuntu, Cantarell, "Noto Sans", Arial;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  color:var(--text);
+  background:
+    radial-gradient(1400px 800px at 80% -10%, rgba(0,229,255,.10), transparent 60%),
+    radial-gradient(1100px 700px at -10% 100%, rgba(0,179,255,.08), transparent 60%),
+    linear-gradient(180deg, var(--bg), var(--bg2) 45%, #051018);
+  overflow-x:hidden;
+  /* Prevent horizontal nudge when scrollbar appears/disappears */
+  overflow-y: scroll;
+}
+
+/* PARTICLES */
+canvas.pfx{ position:fixed; inset:0; width:100%; height:100%; display:block; z-index:0; pointer-events:none }
+
+/* STARTUP */
+.splash{ position:fixed; inset:0; z-index:9999; background:#01040a; display:grid; place-items:center; overflow:hidden }
+.s-layer{ position:absolute; inset:0; pointer-events:none }
+.s-gradient{ background:
+  radial-gradient(1000px 600px at 80% -10%, rgba(0,229,255,.18), transparent 60%),
+  radial-gradient(1000px 600px at -10% 100%, rgba(0,179,255,.12), transparent 60%) }
+.s-stars{ background:
+  radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.15), transparent 60%),
+  radial-gradient(1px 1px at 70% 60%, rgba(255,255,255,.08), transparent 60%),
+  radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,.12), transparent 60%);
+  opacity:.14; filter: blur(.3px)
+}
+.s-waves{ filter: blur(34px); opacity:0;
+  background: conic-gradient(from 0deg at 50% 50%, rgba(0,229,255,.00) 0deg, rgba(0,229,255,.20) 60deg, rgba(0,229,255,.00) 120deg, rgba(0,255,213,.15) 180deg, rgba(0,229,255,.00) 240deg, rgba(0,229,255,.18) 300deg, rgba(0,229,255,.00) 360deg);
+}
+.s-rings{ background: radial-gradient(circle at 50% 50%, rgba(0,229,255,.22), transparent 40%); opacity:0 }
+.s-beam{ left:-40%; top:50%; height:2px; width:180%; background: linear-gradient(90deg, transparent, rgba(0,229,255,.6), transparent); opacity:0 }
+.s-sweep{ inset:-10vh -10vw; background: radial-gradient(40vmax 20vmax at -20% 50%, rgba(0,229,255,.20), transparent 60%); opacity:0 }
+.s-scan{ background-image: repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 4px); opacity:0 }
+
+.s-content{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; }
+.s-logo{ width:128px;height:128px;border-radius:28px; display:grid; place-items:center;
+  background: radial-gradient(120% 120% at 30% 30%, rgba(0,229,255,.18), rgba(0,179,255,.10) 60%, transparent 70%);
+  border:1px solid rgba(0,229,255,.35);
+  box-shadow: 0 0 60px rgba(0,229,255,.35), inset 0 0 48px rgba(0,229,255,.10);
+  transform: scale(.85); opacity:0
+}
+.s-logo img{ width:76%; height:76%; object-fit:contain; filter: drop-shadow(0 0 12px rgba(0,229,255,.7)); }
+.s-title{ font-size: clamp(34px, 7vw, 80px); font-weight:1000; letter-spacing:.6px; text-shadow: 0 0 22px rgba(0,229,255,.22); opacity:0; transform: translateY(8px); position:relative }
+.s-title .bloom{ position:absolute; inset:0; filter: blur(14px); opacity:.0; pointer-events:none; text-shadow: 0 0 42px rgba(0,229,255,.55) }
+.s-sub{ font-size:14px; color:#cfefff; opacity:0 }
+
+/* ENGAGE button — premium tactile */
+.engage{ position:absolute; inset:0; display:grid; place-items:center; z-index:3 }
+.engage .btn{
+  appearance:none; border:none; height:56px; min-width:176px; padding:0 24px;
+  border-radius:18px; font-weight:1000; letter-spacing:.3px; cursor:pointer; color:#001217;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+  position:relative;
+  box-shadow: 0 12px 28px rgba(0,229,255,.35), inset 0 -6px 12px rgba(0,0,0,.25);
+  transform: translateY(0);
+  transition: transform .18s ease, filter .18s ease, box-shadow .18s ease;
+  font-size:17px;
+}
+.engage .btn::before{
+  content:""; position:absolute; inset:-3px; border-radius:20px;
+  border:2px solid rgba(0,229,255,.6); filter: blur(3px); opacity:.55;
+}
+.engage .btn::after{
+  content:""; position:absolute; left:12px; right:12px; top:8px; height:18px; border-radius:12px;
+  background: linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,0));
+  pointer-events:none;
+}
+.engage .btn:hover{ transform: translateY(-2px); filter: brightness(1.07); box-shadow: 0 16px 36px rgba(0,229,255,.45), inset 0 -6px 12px rgba(0,0,0,.25) }
+.engage .btn:active{ transform: translateY(0) scale(.985) }
+.engage .btn:focus-visible{ outline: none; box-shadow: 0 0 0 4px rgba(0,229,255,.28), 0 16px 36px rgba(0,229,255,.45), inset 0 -6px 12px rgba(0,0,0,.25) }
+.engage .hint{ margin-top:10px; color:#a8d9e6; font-size:12px; text-shadow: 0 0 10px rgba(0,229,255,.25) }
+
+/* Exit splash */
+.splash.hide{ animation: splashOut .85s ease forwards }
+@keyframes splashOut { to{ opacity:0; transform: translateY(-3vh); visibility:hidden } }
+
+/* APP */
+.wrapper{position:relative;z-index:1;min-height:100%;display:flex;align-items:center;justify-content:center;padding:6vh 18px 10vh}
+#mainParticles{ z-index:0 }
+.card{
+  position:relative;
+  z-index:1;
+  width:min(1400px, 98vw);
+  background: linear-gradient(180deg, rgba(12,23,36,.88), rgba(12,23,36,.72));
+  backdrop-filter: blur(14px) saturate(130%);
+  border: 1px solid rgba(0,229,255,.20);
+  border-radius: 32px;
+  box-shadow: var(--shadow);
+  padding: clamp(18px, 4.2vw, 56px);
+  overflow: hidden;
+  /* Let us animate height on compact toggle so the page center doesn't jump */
+  transition: height .45s cubic-bezier(.2,.7,.2,1);
+}
+.header{ display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom: 6px; text-align:center; flex-wrap:wrap }
+.logoBox{ width:86px; height:86px; display:grid; place-items:center; border-radius:20px; background: radial-gradient(120% 120% at 30% 30%, rgba(0,229,255,.22), rgba(0,179,255,.10) 60%, transparent 70%); border:1px solid rgba(0,229,255,.28); box-shadow: 0 0 30px rgba(0,229,255,.28), inset 0 0 28px rgba(0,229,255,.10) }
+.logoBox img{ width:76%; height:76%; object-fit:contain; filter: drop-shadow(0 0 10px rgba(0,229,255,.6)) }
+.title{ flex-basis:100%; font-size: clamp(36px, 6vw, 72px); line-height:1.02; margin:2px 0 0 0; letter-spacing:.35px; text-shadow: 0 0 24px rgba(0,229,255,.16) }
+.blurb{ margin:8px auto 0 auto; max-width: 900px; color: var(--muted); font-size: clamp(13px, 1.6vw, 15px); line-height: 1.45 }
+
+/* Controls row */
+.controls{ display:flex; align-items:stretch; justify-content:flex-start; gap:12px; margin-top:16px; flex-wrap:wrap }
+/* Tabs: stop stretching across the row; fix edges by clipping overflow */
+.tabs{
+  position:relative; display:flex; align-items:center; gap:8px;
+  background:linear-gradient(180deg,#112033,#0a121c);
+  border:1px solid rgba(0,229,255,.28); border-radius:14px; padding:6px 6px;
+  box-shadow:0 12px 28px rgba(0,229,255,.14);
+  /* was flex:1; now only grow to fit content */
+  flex: 0 1 auto; overflow:hidden; min-height:48px
+}
+.tabs::after{ content:""; position:absolute; height:calc(100% - 10px); top:5px; left:var(--tab-x,6px); width:var(--tab-w, 180px); border-radius:12px; background: radial-gradient(120% 120% at 50% 0%, rgba(0,229,255,.22), rgba(0,179,255,.10)); border:1px solid rgba(0,229,255,.30); box-shadow: inset 0 0 0 1px rgba(0,229,255,.14), 0 0 20px rgba(0,229,255,.12); transition: left .28s cubic-bezier(.2,.7,.2,1), width .28s cubic-bezier(.2,.7,.2,1) }
+.tabs button{ appearance:none; border:none; border-radius:12px; padding:12px 14px; color:var(--text); background:transparent; cursor:pointer; font-weight:800; letter-spacing:.2px; position:relative; transition: transform .18s cubic-bezier(.2,.7,.2,1) }
+.tabs button:hover{ transform: translateY(-2px) }
+.tabs button[aria-pressed="true"]{ text-shadow: 0 0 10px rgba(0,229,255,.28) }
+
+/* Tools (search + compact) stick to the right) */
+.tools{ display:flex; gap:10px; align-items:center; margin-left:auto; flex-wrap:wrap }
+.search{ display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; background: linear-gradient(180deg,#101a27,#0a121c); border:1px solid rgba(0,229,255,.24); min-width:220px; color:var(--text); box-shadow: 0 8px 20px rgba(0,229,255,.10) }
+.search input{ background:transparent; border:none; outline:none; color:var(--text); width:160px }
+.compactToggle{ appearance:none; border:1px solid rgba(0,229,255,.24); background:linear-gradient(180deg,#101a27,#0a121c); color:var(--text); border-radius:12px; padding:10px 12px; cursor:pointer; font-weight:800; box-shadow: 0 8px 20px rgba(0,229,255,.10) }
+
+.gridWrap{ position:relative; transition: height .45s cubic-bezier(.2,.7,.2,1); height:auto }
+.grid{ display:grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: clamp(14px, 2vw, 28px); margin-top: 18px; transition: opacity .45s cubic-bezier(.2,.7,.2,1), transform .45s cubic-bezier(.2,.7,.2,1) }
+@media (max-width: 1100px){ .grid{ grid-template-columns: repeat(3, minmax(0,1fr)); } }
+@media (max-width: 640px){ .grid{ grid-template-columns: 1fr; } }
+
+.btn{ position:relative; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:10px; width:100%; min-height: 180px; padding: 20px 18px 22px; background: linear-gradient(180deg, rgba(15,24,36,.92), rgba(9,14,22,.90)); border:1px solid rgba(0,229,255,.30); border-radius: var(--card-radius); color:var(--text); text-decoration:none; overflow:hidden; transition: transform .45s cubic-bezier(.2,.7,.2,1), border-color .45s cubic-bezier(.2,.7,.2,1), background .45s cubic-bezier(.2,.7,.2,1), box-shadow .45s cubic-bezier(.2,.7,.2,1), opacity .2s ease, padding .45s cubic-bezier(.2,.7,.2,1), min-height .45s cubic-bezier(.2,.7,.2,1); box-shadow: 0 18px 40px rgba(0,229,255,.14); isolation:isolate; will-change: transform; animation: popin .45s cubic-bezier(.2,.7,.2,1) both }
+@keyframes popin{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.btn:before{ content:""; position:absolute; inset:-1px; border-radius:var(--card-radius); background: radial-gradient(700px 160px at var(--mx,50%) var(--my,0%), rgba(0,229,255,.22), transparent 40%), linear-gradient(180deg, rgba(0,229,255,.10), transparent 40%); transition: opacity .18s ease; opacity:.0; z-index:0 }
+.btn:hover:before{ opacity:1 }
+.btn:hover{ transform: translateY(-8px) scale(1.01); border-color: rgba(0,229,255,.58); box-shadow: 0 24px 56px rgba(0,229,255,.18) }
+.btn h3{ margin:0; font-size: clamp(18px, 2.2vw, 22px); font-weight: 900; letter-spacing:.2px; text-shadow: 0 0 12px rgba(0,229,255,.22) }
+.btn p{ margin:0; color: var(--muted); font-size: clamp(13px, 1.7vw, 15px); max-height: 200px; transition: max-height .45s cubic-bezier(.2,.7,.2,1), opacity .45s cubic-bezier(.2,.7,.2,1), transform .45s cubic-bezier(.2,.7,.2,1) }
+.badge{ position:absolute; right:12px; top:12px; font-size: 12px; padding:6px 11px; border:1px solid rgba(0,229,255,.44); border-radius: 999px; color: var(--accent); background: rgba(0, 229, 255, .10); text-transform: uppercase; letter-spacing:.9px; box-shadow: inset 0 0 0 1px rgba(0,229,255,.12); transition: transform .45s cubic-bezier(.2,.7,.2,1) }
+
+/* Compact */
+.compact .btn{ min-height: 120px; padding: 16px 16px }
+.compact .btn p{ max-height:0; opacity:.0; transform: translateY(-6px) }
+.compact .badge{ transform: translateY(-2px) scale(.96) }
+
+.actions{ display:flex; gap:16px; margin-top: 22px; flex-wrap:wrap; align-items:center; justify-content:center }
+.openall{ cursor:pointer; border:none; border-radius:18px; padding: 16px 20px; color:#001217; font-weight: 1000; letter-spacing:.35px; font-size: 18px; background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3)); box-shadow: 0 16px 40px rgba(0,229,255,.38); transition: transform .45s cubic-bezier(.2,.7,.2,1), box-shadow .45s cubic-bezier(.2,.7,.2,1), filter .45s cubic-bezier(.2,.7,.2,1) }
+.openall:hover{ transform: translateY(-3px); filter: brightness(1.07) }
+.openall:active{ transform: translateY(0) scale(.99) }
+
+/* Note */
+.note{ position:fixed; left:50%; bottom:14px; transform:translateX(-50%); z-index:2;
+  display:inline-flex; align-items:center; gap:10px; background: linear-gradient(180deg, #ffe082, #ffd95b); color: var(--warn-text);
+  border: 1px solid #f5c842; border-radius: 12px; padding: 8px 12px; box-shadow: 0 12px 32px rgba(255, 217, 91, .28); font-weight:800; font-size:13px; animation: notePulse 2.6s ease-in-out infinite }
+@keyframes notePulse { 0%,100%{transform:translateX(-50%) scale(1)} 50%{transform:translateX(-50%) scale(1.02)} }
+.note svg{ width:16px; height:16px }
+
+/* App reveal */
+.reveal{ opacity:0; transform: translateY(10px) scale(.98); filter: blur(4px) }
+.reveal.show{ transition: opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1), filter .6s cubic-bezier(.2,.7,.2,1); opacity:1; transform: translateY(0) scale(1); filter: blur(0) }
+
+@media (prefers-reduced-motion: reduce) {
+  .splash, .s-waves, .s-rings { animation: none !important; transition: none !important; }
+  .reveal, .reveal.show { filter:none; transform:none; opacity:1 }
+}
+</style>
+</head>
+<body>
+
+<!-- Splash -->
+<div class="splash" id="splash">
+  <div class="s-layer s-gradient"></div>
+  <div class="s-layer s-stars"></div>
+  <div class="s-layer s-rings" id="rings"></div>
+  <div class="s-layer s-waves" id="waves"></div>
+  <div class="s-layer s-beam" id="beam"></div>
+  <div class="s-layer s-sweep" id="sweep"></div>
+  <div class="s-layer s-scan" id="scan"></div>
+  <canvas class="pfx" id="startParticles"></canvas>
+
+  <div class="s-content">
+    <div class="s-logo" id="slogo"><img src="https://file.garden/aACuwggY3QmuIi9B/TheReporter" alt=""></div>
+    <div class="s-title" id="stitle">The Reporter<span class="bloom" aria-hidden="true">The Reporter</span></div>
+    <div class="s-sub" id="ssub">Stand by…</div>
+  </div>
+
+  <div class="engage" id="engage">
+    <div style="display:flex;flex-direction:column;align-items:center">
+      <button class="btn" id="engageBtn" type="button" aria-label="Engage and start">ENGAGE</button>
+      <div class="hint">Press to begin</div>
+    </div>
+  </div>
+
+  <audio id="startupAudio" preload="auto" playsinline src="https://file.garden/aACuwggY3QmuIi9B/Xbox%20Series%20XS%20-%20Startup%20Screen.mp3"></audio>
+</div>
+
+<!-- Main -->
+<canvas class="pfx" id="mainParticles"></canvas>
+
+<div class="wrapper reveal" id="app">
+  <main class="card" id="card">
+    <header class="header">
+      <div class="logoBox" aria-hidden="true" title="The Reporter">
+        <img src="https://file.garden/aACuwggY3QmuIi9B/TheReporter" alt="The Reporter Icon">
+      </div>
+      <h1 class="title">The Reporter</h1>
+      <p class="blurb"><b>What is this?</b> A single, local page to quickly open the best portals for reporting malicious links/files or analyzing suspicious content. Choose a profile that fits your goal, then hit <i>Open All</i>.</p>
+    </header>
+
+    <div class="controls">
+      <nav class="tabs" id="tabs" role="tablist" aria-label="Profiles">
+        <button role="tab" aria-selected="true" aria-pressed="true" data-key="top5">Top 5 — GPT research (2025‑08‑11)</button>
+        <button role="tab" aria-selected="false" aria-pressed="false" data-key="public">Best for Public Protection</button>
+        <button role="tab" aria-selected="false" aria-pressed="false" data-key="research">Best for Research / Evidence</button>
+      </nav>
+      <div class="tools">
+        <div class="search" title="Filter visible services">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="11" cy="11" r="7" stroke="rgba(234,244,255,.9)" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="rgba(234,244,255,.9)" stroke-width="2" stroke-linecap="round"/></svg>
+          <input id="search" type="text" placeholder="Search services…">
+        </div>
+        <button class="compactToggle" id="toggleView" title="Toggle compact view">Compact view: Off</button>
+      </div>
+    </div>
+
+    <section class="gridWrap"><div class="grid" id="grid"></div></section>
+
+    <div class="actions">
+      <button class="openall" id="openAll">Open All</button>
+    </div>
+
+    <footer class="footer">
+      <div class="left">© 2025 <b>matesaman9910</b> — All rights reserved.</div>
+      <div class="right"><span class="small">This project (“The Reporter”) is the creator’s intellectual property. It does not claim ownership of or affiliation with the websites linked above. Copyright applies only to this local webpage.</span></div>
+    </footer>
+  </main>
+</div>
+
+<div class="note" id="note">
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8v4m0 4h.01M12 3l9 18H3L12 3z" stroke="#5f4a00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  Pop‑up note: allow multiple tabs when opening all at once.
+</div>
+
+<script>
+const EASE = 'cubic-bezier(0.2, 0.7, 0.2, 1)';
+const DUR = 10000;
+
+// Services & profiles
+const SERVICES = {
+  google: {id:"google", name:"Google Safe Browsing", url:"https://safebrowsing.google.com/safebrowsing/report_phish/", badge:"Browser", desc:"Report phishing or unsafe sites to protect Chrome/Firefox/Safari users."},
+  vt:     {id:"vt",     name:"VirusTotal",           url:"https://www.virustotal.com/gui/home/upload",                badge:"Multi‑AV", desc:"Upload suspicious files/URLs for instant multi‑engine scanning."},
+  msft:   {id:"msft",   name:"Defender SmartScreen", url:"https://www.microsoft.com/en-us/wdsi/support/report-unsafe-site-guest", badge:"OS", desc:"Report unsafe URLs to help protect Edge, Windows, and Outlook users."},
+  triage: {id:"triage", name:"Triage",               url:"https://tria.ge/",                                          badge:"Sandbox", desc:"Automated malware detonation, behavior analysis and IOC extraction."},
+  anyrun: {id:"anyrun", name:"ANY.RUN",              url:"https://app.any.run/",                                      badge:"Sandbox (Interactive)", desc:"Interactive sandbox for files/URLs. Live behavior and indicators."},
+  urlhaus:{id:"urlhaus",name:"URLhaus",              url:"https://urlhaus.abuse.ch/",                                badge:"Feed", desc:"Report malware distribution URLs; feeds into major blocklists (Spamhaus)."},
+  apwg:   {id:"apwg",   name:"APWG",                 url:"https://apwg.org/reportphishing/",                          badge:"Phish", desc:"Forward phishing emails/links; shared with banks and providers."},
+  phish:  {id:"phish",  name:"PhishTank",            url:"https://phishtank.org/add_web_phish.php",                   badge:"Phish", desc:"Submit phishing URLs; community verification and open API."},
+  hybrid: {id:"hybrid", name:"Hybrid Analysis",      url:"https://hybrid-analysis.com/",                              badge:"Sandbox", desc:"Detailed sandbox behavior reports and IOCs (CrowdStrike community)."},
+  bazaar: {id:"bazaar", name:"MalwareBazaar",        url:"https://bazaar.abuse.ch/upload/",                           badge:"Samples", desc:"Share malware samples and hashes with the research community."},
+};
+const PROFILES = {
+  top5:    ["google","vt","msft","triage","anyrun"],
+  public:  ["google","msft","urlhaus","apwg","phish"],
+  research:["vt","triage","anyrun","hybrid","bazaar"],
+};
+
+// Particles
+function particles(canvas, opts={}){
+  const ctx = canvas.getContext('2d');
+  let DPR = Math.max(1, window.devicePixelRatio||1);
+  function resize(){
+    const cssW = canvas.clientWidth || window.innerWidth;
+    const cssH = canvas.clientHeight || window.innerHeight;
+    canvas.width = Math.floor(cssW * DPR);
+    canvas.height = Math.floor(cssH * DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  resize(); window.addEventListener('resize', ()=>{DPR=Math.max(1,window.devicePixelRatio||1); resize();});
+  const P = [];
+  const count = opts.count || 110;
+  for(let i=0;i<count;i++){
+    P.push({x:Math.random()*canvas.width/DPR, y:Math.random()*canvas.height/DPR, r:(Math.random()*1.5+0.35), a:Math.random()*Math.PI*2, s:(Math.random()*0.6+0.2)});
+  }
+  function step(){
+    const W = canvas.width/DPR, H = canvas.height/DPR;
+    ctx.clearRect(0,0,W,H);
+    ctx.globalCompositeOperation='lighter';
+    for(const p of P){
+      p.x += Math.cos(p.a)*p.s*(opts.speed||1);
+      p.y += Math.sin(p.a)*p.s*0.6*(opts.speed||1);
+      p.a += (Math.random()-0.5)*0.08;
+      if(p.x<0) p.x=W; if(p.x>W) p.x=0; if(p.y<0) p.y=H; if(p.y>H) p.y=0;
+      const g = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*6);
+      g.addColorStop(0, opts.color || 'rgba(0,229,255,.8)');
+      g.addColorStop(1,'rgba(0,229,255,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+    }
+    requestAnimationFrame(step);
+  }
+  step();
+  return { boost(intensity=1.8, duration=900){
+    const orig = opts.speed||1;
+    opts.speed = orig*intensity;
+    setTimeout(()=>{ opts.speed = orig; }, duration);
+  }};
+}
+
+const grid = document.getElementById('grid');
+const gridWrap = document.querySelector('.gridWrap');
+const app = document.getElementById('app');
+const tabs = document.getElementById('tabs');
+const card = document.getElementById('card');
+
+function cardTemplate(svc){
+  return `<a class="btn show" data-id="${svc.id}" href="${svc.url}" target="_blank" rel="noopener" title="${svc.desc}">
+    <span class="badge">${svc.badge}</span>
+    <h3>${svc.name}</h3>
+    <p>${svc.desc}</p>
+  </a>`;
+}
+function moveTabIndicator(activeBtn){
+  const r = tabs.getBoundingClientRect();
+  const b = activeBtn.getBoundingClientRect();
+  tabs.style.setProperty('--tab-x', (b.left - r.left + 6) + 'px');
+  tabs.style.setProperty('--tab-w', b.width + 'px');
+}
+function renderProfile(key){
+  const ids = PROFILES[key] || PROFILES.top5;
+  const existing = Array.from(grid.children);
+  const first = new Map(existing.map(el => [el.getAttribute('data-id'), el.getBoundingClientRect()]));
+  grid.style.opacity = '0'; grid.style.transform = 'translateY(8px)';
+  setTimeout(()=>{
+    grid.innerHTML = ids.map(id => cardTemplate(SERVICES[id])).join("");
+    attachCardHover();
+    grid.style.opacity = '1'; grid.style.transform = 'translateY(0)';
+    const after = Array.from(grid.children);
+    after.forEach(el => {
+      const id = el.getAttribute('data-id'); const f = first.get(id); const l = el.getBoundingClientRect();
+      if(f){ el.animate([{transform:`translate(${f.left - l.left}px,${f.top - l.top}px)`},{transform:'translate(0,0)'}],{duration:420,easing:EASE}); }
+    });
+    localStorage.setItem('the-reporter-profile', key);
+  }, 90);
+}
+function attachCardHover(){
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('pointermove', e => {
+      const r = btn.getBoundingClientRect();
+      btn.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+      btn.style.setProperty('--my', (e.clientY - r.top) + 'px');
+    }, {passive:true});
+  });
+}
+document.querySelectorAll('.tabs button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach(x => {
+      const on = x === b;
+      x.setAttribute('aria-pressed', on);
+      x.setAttribute('aria-selected', on);
+    });
+    moveTabIndicator(b);
+    renderProfile(b.dataset.key);
+  });
+});
+const searchInput = document.getElementById('search');
+function filterCards(q){
+  q = q.trim().toLowerCase();
+  document.querySelectorAll('#grid .btn').forEach(card => {
+    const match = (card.innerText || '').toLowerCase().includes(q);
+    if(match){ card.classList.remove('hide'); card.classList.add('show'); card.style.display=''; }
+    else { card.classList.remove('show'); card.classList.add('hide'); setTimeout(()=>{ if(card.classList.contains('hide')) card.style.display='none'; }, 220); }
+  });
+}
+let searchTimer=null;
+searchInput.addEventListener('input', (e) => { clearTimeout(searchTimer); const val=e.target.value; searchTimer=setTimeout(()=>filterCards(val), 80); });
+
+// Compact toggle with better FLIP and card container height easing (prevents center shift)
+const toggleView = document.getElementById('toggleView');
+toggleView.addEventListener('click', () => {
+  const beforeCardH = card.offsetHeight;
+  const beforeH = gridWrap.offsetHeight;
+  const cards = Array.from(document.querySelectorAll('.btn'));
+  const heights = cards.map(el => el.getBoundingClientRect().height);
+  cards.forEach((el,i)=>{ el.style.height = heights[i]+'px'; });
+  document.body.classList.toggle('compact');
+  const on = document.body.classList.contains('compact');
+  toggleView.textContent = 'Compact view: ' + (on ? 'On' : 'Off');
+
+  requestAnimationFrame(()=>{
+    const newHeights = cards.map(el => el.getBoundingClientRect().height);
+    const afterH = gridWrap.offsetHeight;
+    const afterCardH = card.offsetHeight;
+
+    // Animate outer card height
+    card.style.height = beforeCardH+'px'; card.offsetHeight; card.style.height = afterCardH+'px';
+
+    // Animate grid container height
+    gridWrap.style.height = beforeH+'px'; gridWrap.offsetHeight; gridWrap.style.height = afterH+'px';
+
+    // Animate each card height
+    cards.forEach((el,i)=>{
+      el.style.transition = 'height .4s '+EASE;
+      el.style.height = newHeights[i]+'px';
+      setTimeout(()=>{ el.style.height=''; el.style.transition=''; }, 450);
+    });
+    setTimeout(()=>{ gridWrap.style.height='auto'; card.style.height='auto'; }, 470);
+  });
+
+  localStorage.setItem('the-reporter-compact', on ? '1' : '0');
+});
+
+document.getElementById('openAll').addEventListener('click', () => {
+  const urls = Array.from(grid.querySelectorAll('.btn')).filter(b=>b.style.display!=='none').map(b => b.href);
+  urls.forEach((u, i) => setTimeout(() => window.open(u, '_blank', 'noopener'), i * 120));
+});
+
+// Particles both layers
+particles(document.getElementById('mainParticles'), {count:130, speed:0.8});
+
+// Init
+(function initUI(){
+  const savedProfile = localStorage.getItem('the-reporter-profile') || 'top5';
+  const compact = localStorage.getItem('the-reporter-compact') === '1';
+  if(compact){ document.body.classList.add('compact'); toggleView.textContent = 'Compact view: On'; }
+  const activeBtn = Array.from(document.querySelectorAll('.tabs button')).find(b => b.dataset.key === savedProfile) || document.querySelectorAll('.tabs button')[0];
+  activeBtn.setAttribute('aria-pressed', true);
+  activeBtn.setAttribute('aria-selected', true);
+  moveTabIndicator(activeBtn);
+  renderProfile(savedProfile);
+})();
+
+// STARTUP
+(function startup(){
+  const splash = document.getElementById('splash');
+  const logo = document.getElementById('slogo');
+  const title = document.getElementById('stitle');
+  const bloom = title.querySelector('.bloom');
+  const sub = document.getElementById('ssub');
+  const rings = document.getElementById('rings');
+  const waves = document.getElementById('waves');
+  const beam = document.getElementById('beam');
+  const sweep = document.getElementById('sweep');
+  const scan = document.getElementById('scan');
+  const engage = document.getElementById('engage');
+  const engageBtn = document.getElementById('engageBtn');
+  const audioEl = document.getElementById('startupAudio');
+  const startCanvas = document.getElementById('startParticles');
+
+  const startFx = particles(startCanvas, {count:120, speed:0.8});
+
+  function runTimeline(){
+    engage.animate([{opacity:1},{opacity:0}], {duration:380, easing:EASE, fill:'forwards'}).onfinish=()=>{ engage.style.display='none'; };
+
+    logo.animate([{opacity:0, transform:'scale(.82)'},{opacity:1, transform:'scale(1)'}], {duration:900, easing:EASE, fill:'forwards', delay:200});
+    setTimeout(()=>{ rings.style.opacity=1; rings.animate([{opacity:.0, transform:'scale(.96)'},{opacity:.25, transform:'scale(1.03)'},{opacity:.0, transform:'scale(1)'}],{duration:1600, iterations:2, easing:'ease-in-out'}); }, 900);
+    setTimeout(()=>{ waves.style.opacity=.45; waves.animate([{transform:'rotate(0deg)'},{transform:'rotate(360deg)'}],{duration:9500, iterations:Infinity, easing:'linear'}); }, 1200);
+    title.animate([{opacity:0, transform:'translateY(8px)', letterSpacing:'0.25em'},{opacity:1, transform:'translateY(0)', letterSpacing:'.02em'}], {duration:1100, easing:EASE, fill:'forwards', delay:1800});
+    bloom.animate([{opacity:0},{opacity:.6},{opacity:0}], {duration:1400, delay:2100, easing:'ease-in-out'});
+    sub.animate([{opacity:0},{opacity:.9}], {duration:700, delay:2500, fill:'forwards'});
+    beam.animate([{opacity:0, transform:'translateX(-10%)'},{opacity:1, transform:'translateX(40%)'},{opacity:0, transform:'translateX(60%)'}], {duration:1200, delay:3200, easing:'ease-in-out'});
+    scan.animate([{opacity:0},{opacity:.18},{opacity:0}], {duration:1000, delay:3800, easing:'ease-in-out'});
+    sweep.animate([{opacity:0, transform:'translateX(-6%)'},{opacity:1, transform:'translateX(60%)'},{opacity:0, transform:'translateX(80%)'}], {duration:1800, delay:4200, easing:'ease-in-out'});
+    setTimeout(()=> startFx.boost(2.0, 900), 6000);
+    setTimeout(()=>{ rings.animate([{opacity:.0, transform:'scale(.98)'},{opacity:.22, transform:'scale(1.04)'},{opacity:.0, transform:'scale(1)'}],{duration:1400, easing:'ease-in-out'}); }, 7000);
+    setTimeout(()=>{ splash.classList.add('hide'); setTimeout(()=>{ splash.style.display='none'; app.classList.add('show'); }, 850); }, DUR);
+  }
+
+  function startAll(){
+    audioEl.volume = 1.0;
+    audioEl.currentTime = 0;
+    audioEl.play().catch(()=>{});
+    runTimeline();
+  }
+  engageBtn.addEventListener('click', startAll, {once:true});
+  engageBtn.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); engageBtn.click(); }
+  });
+})();
+</script>
+</body>
+</html>
